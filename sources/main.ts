@@ -110,7 +110,6 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
   repository(owner:$owner, name: $repo) { 
     pullRequests(first: 100, after: $after, states: OPEN, baseRefName: $baseRefName) {
       nodes {
-        mergeable
         number
         permalink
         title
@@ -155,69 +154,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 	let dirtyStatuses: Record<number, boolean> = {};
 	for (const pullRequest of pullRequests) {
 		core.debug(JSON.stringify(pullRequest, null, 2));
+		const info = (message: string) =>
+			core.info(`for PR "${pullRequest.title}": ${message}`);
 		if (baseRefName) {
 			core.info(
 				`Removing label 'fast-forward'.`
 			);
 			removeLabelIfExists("fast-forward", pullRequest, { client });
-		}
-		const info = (message: string) =>
-			core.info(`for PR "${pullRequest.title}": ${message}`);
-
-		switch (pullRequest.mergeable) {
-			case "CONFLICTING":
-				info(
-					`add "${dirtyLabel}", remove "${removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`
-					}"`
-				);
-				// for labels PRs and issues are the same
-				const [addedDirtyLabel] = await Promise.all([
-					addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
-					removeOnDirtyLabel
-						? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
-						: Promise.resolve(false),
-				]);
-				if (commentOnDirty !== "" && addedDirtyLabel) {
-					await addComment(commentOnDirty, pullRequest, { client });
-				}
-				dirtyStatuses[pullRequest.number] = true;
-				break;
-			case "MERGEABLE":
-				info(`remove "${dirtyLabel}"`);
-				const removedDirtyLabel = await removeLabelIfExists(
-					dirtyLabel,
-					pullRequest,
-					{ client }
-				);
-				if (removedDirtyLabel && commentOnClean !== "") {
-					await addComment(commentOnClean, pullRequest, { client });
-				}
-				// while we removed a particular label once we enter "CONFLICTING"
-				// we don't add it again because we assume that the removeOnDirtyLabel
-				// is used to mark a PR as "merge!".
-				// So we basically require a manual review pass after rebase.
-				dirtyStatuses[pullRequest.number] = false;
-				break;
-			case "UNKNOWN":
-				info(`Retrying after ${retryAfter}s.`);
-				return new Promise((resolve) => {
-					setTimeout(() => {
-						core.info(`retrying with ${retryMax} retries remaining.`);
-
-						checkDirty({ ...context, retryMax: retryMax - 1 }).then(
-							(newDirtyStatuses) => {
-								resolve({
-									...dirtyStatuses,
-									...newDirtyStatuses,
-								});
-							}
-						);
-					}, retryAfter * 1000);
-				});
-			default:
-				throw new TypeError(
-					`unhandled mergeable state '${pullRequest.mergeable}'`
-				);
 		}
 	}
 
@@ -265,7 +208,7 @@ async function addLabelIfNotExists(
 		})
 		.then(
 			() => true,
-			(error) => {
+			(error: { status: number; message: string; }) => {
 				if (
 					(error.status === 403 || error.status === 404) &&
 					continueOnMissingPermissions() &&
@@ -307,7 +250,7 @@ async function removeLabelIfExists(
 		})
 		.then(
 			() => true,
-			(error) => {
+			(error: { status: number; message: string; }) => {
 				if (
 					(error.status === 403 || error.status === 404) &&
 					continueOnMissingPermissions() &&

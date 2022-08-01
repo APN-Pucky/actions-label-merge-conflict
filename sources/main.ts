@@ -155,7 +155,9 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 	let dirtyStatuses: Record<number, boolean> = {};
 	for (const pullRequest of pullRequests) {
 		core.debug(JSON.stringify(pullRequest, null, 2));
-
+		if(baseRefName) {
+			removeLabelIfExists("fast-forward", pullRequest, { client });
+		}
 		const info = (message: string) =>
 			core.info(`for PR "${pullRequest.title}": ${message}`);
 

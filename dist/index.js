@@ -5988,6 +5988,12 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
         for (const pullRequest of pullRequests) {
             core.debug(JSON.stringify(pullRequest, null, 2));
             const info = (message) => core.info(`for PR "${pullRequest.title}": ${message}`);
+		if (baseRefName) {
+			info(
+				`Removing label 'fast-forward'.`
+			);
+			removeLabelIfExists("fast-forward", pullRequest, { client });
+		}
             switch (pullRequest.mergeable) {
                 case "CONFLICTING":
                     info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`}"`);

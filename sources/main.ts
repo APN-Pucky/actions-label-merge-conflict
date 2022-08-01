@@ -155,7 +155,10 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 	let dirtyStatuses: Record<number, boolean> = {};
 	for (const pullRequest of pullRequests) {
 		core.debug(JSON.stringify(pullRequest, null, 2));
-		if(baseRefName) {
+		if (baseRefName) {
+			core.info(
+				`Removing label 'fast-forward'.`
+			);
 			removeLabelIfExists("fast-forward", pullRequest, { client });
 		}
 		const info = (message: string) =>
@@ -164,8 +167,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 		switch (pullRequest.mergeable) {
 			case "CONFLICTING":
 				info(
-					`add "${dirtyLabel}", remove "${
-						removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`
+					`add "${dirtyLabel}", remove "${removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`
 					}"`
 				);
 				// for labels PRs and issues are the same

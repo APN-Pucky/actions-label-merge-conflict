@@ -27,7 +27,7 @@ async function main() {
 
 	const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
 	core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
-	const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
+	const baseRefName = core.getInput("branch") || (isPushEvent ? getBranchName(github.context.ref) : null);
 
 	const client = github.getOctokit(repoToken);
 
@@ -89,7 +89,6 @@ async function checkDirty(
 		repository: {
 			pullRequests: {
 				nodes: Array<{
-					mergeable: string;
 					number: number;
 					permalink: string;
 					title: string;

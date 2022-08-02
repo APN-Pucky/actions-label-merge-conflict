@@ -1,6 +1,8 @@
 name: "Label Conflicting Pull Requests"
 description: "This action adds a given label to Pull Requests that have merge conflicts and removes a given label from these pull requests"
 inputs:
+  branch:
+    description: "Branch that changed and needs label removal."
   repoToken:
     description: "Token for the repository. Can be passed in using {{ secrets.GITHUB_TOKEN }}"
     required: true

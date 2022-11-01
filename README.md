@@ -1,5 +1,7 @@
 # label merge-conflict action
 
+> :warning: This is a slightly modified version from the original to work with a fast-forward action/bot: https://github.com/APN-Pucky/fast-forward-action
+
 This action adds a given label to Pull Requests that have merge conflicts and removes a given label from these pull requests
 
 ![label lifecycle: open (no label), push to main -> merge conflict -> label: PR needs rebase -> resolve conflicts on PR -> remove label: PR needs rebase](https://raw.githubusercontent.com/eps1lon/actions-label-merge-conflict/main/label-lifecycle.png).
